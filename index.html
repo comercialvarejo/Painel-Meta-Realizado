@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10263A">
 <title>Meta x Realizado – Acompanhamento de vendas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +28,7 @@
   --accent:#5CC4E0; --on-accent:#0C1A26; --geral:#E6EEF4; --iqf:#5AA9EA; --alp:#F0974F;
   --good:#4FC58A; --bad:#F0806F; --wa:#1E9E50; --field:#0C1A26;
 }
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:400 15px/1.5 "Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
@@ -119,7 +120,7 @@ tfoot td{border-top:2px solid var(--ink);font-weight:700;background:var(--surfac
 /* mensagem */
 .wa-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,260px);gap:12px 20px;align-items:start}
 @media (max-width:760px){.wa-row{grid-template-columns:1fr}}
-.msg{min-height:340px;font-family:"Public Sans",system-ui,sans-serif;font-size:14px}
+.msg{min-height:420px;font-family:"Public Sans",system-ui,sans-serif;font-size:14px}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 a.wa{display:inline-block;text-decoration:none;background:var(--wa);color:#fff;border-radius:6px;padding:9px 16px;font-weight:600}
 a.wa:hover{filter:brightness(1.08)}
@@ -131,6 +132,51 @@ details.cls summary{cursor:pointer;font-weight:600}
 .cls td:first-child,.cls th:first-child{text-align:left;width:auto}
 .cls td:nth-child(2),.cls th:nth-child(2){text-align:right;min-width:0}
 .cls select{width:auto;padding:4px 8px}
+
+/* tablet e celular: seções reordenadas (arquivos > resultado > meta > clientes > mensagem) */
+@media (max-width:980px){
+  .layout{display:flex;flex-direction:column;margin-top:0}
+  .side,.main{display:contents}
+  .s-files{order:1}.s-result{order:2}.s-meta{order:3}.s-clients{order:4}.s-msg{order:5}.s-cls{order:6}
+  .layout section{border-top:1px solid var(--line)!important;padding:22px 0!important;min-width:0;width:100%}
+  .layout .s-files{border-top:0!important;padding-top:20px!important}
+  #clsWrap{overflow-x:auto}
+}
+@media (max-width:700px){
+  .wrap{padding:16px 14px 40px}
+  .top{padding-bottom:14px}
+  .top p{font-size:14px}
+  input[type=text],input[type=tel],textarea,select{font-size:16px;padding:10px 12px}
+  .metagrid{grid-template-columns:40px 1fr 1fr}
+  .btn,a.wa{min-height:46px;display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;font-size:15px}
+  .actions{flex-direction:column;align-items:stretch}
+  a.wa.web{display:none}
+  .wa-row>div:last-child{order:-1}
+  .msg{min-height:300px;font-size:15px}
+  .tools{flex-direction:column;align-items:flex-start;gap:10px}
+  .seg button{padding:10px 16px}
+  .linkbtn{padding:6px 4px}
+  .files button{padding:6px 12px;font-size:22px}
+  .g-pct{font-size:24px}
+  .drop{padding:26px 16px}
+  /* tabela vira lista de cartões */
+  .scroll{border:0;overflow:visible}
+  #tableWrap table{display:block;min-width:0;width:100%}
+  #tableWrap thead{display:none}
+  #tableWrap tbody,#tableWrap tfoot{display:block}
+  #tableWrap tr{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;position:relative;padding:14px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px;background:var(--surface)}
+  #tableWrap tfoot tr{border:2px solid var(--ink)}
+  #tableWrap td{display:block;padding:0;border:0!important;text-align:left!important;white-space:normal;min-width:0!important;width:auto!important;background:transparent!important;font-weight:600}
+  #tableWrap td[data-label]::before{content:attr(data-label);display:block;font-size:12px;font-weight:400;color:var(--muted)}
+  #tableWrap td.nm{grid-column:1/-1;padding-right:44px;font-size:14.5px}
+  #tableWrap td.ck{position:absolute;top:6px;right:6px;width:44px!important;height:44px;display:flex;align-items:center;justify-content:center}
+  #tableWrap td.ck input{width:22px;height:22px}
+  #tableWrap tfoot td.ck{display:none}
+}
+@media (max-width:380px){
+  .metagrid{grid-template-columns:34px 1fr 1fr;gap:6px}
+  .g-pct{font-size:22px}
+}
 @media (prefers-reduced-motion:reduce){.fill{transition:none}}
 </style>
 </head>
@@ -146,11 +192,11 @@ details.cls summary{cursor:pointer;font-weight:600}
 
   <div class="layout">
     <aside class="side">
-      <section>
+      <section class="s-files">
         <h2>Planilhas de vendas</h2>
         <p class="sub">Arquivos .xlsx exportados do sistema (um ou vários clientes por arquivo).</p>
         <label class="drop" id="drop">
-          <input type="file" id="fileIn" accept=".xlsx,.xls" multiple>
+          <input type="file" id="fileIn" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" multiple>
           <strong>Escolher planilhas</strong>
           <span>ou arraste os arquivos até aqui</span>
         </label>
@@ -158,7 +204,7 @@ details.cls summary{cursor:pointer;font-weight:600}
         <p class="status" id="status" role="status"></p>
       </section>
 
-      <section>
+      <section class="s-meta">
         <h2>Meta do supervisor</h2>
         <p class="sub">Preencha à mão ou cole a mensagem que o supervisor enviou.</p>
         <details class="paste">
@@ -179,13 +225,13 @@ details.cls summary{cursor:pointer;font-weight:600}
     </aside>
 
     <main class="main">
-      <section>
+      <section class="s-result">
         <h2 id="resTitle">Realizado contra a meta</h2>
         <p class="sub" id="resSub">Adicione as planilhas para calcular o realizado.</p>
         <div class="cols" id="cols"></div>
       </section>
 
-      <section>
+      <section class="s-clients">
         <h2>Clientes</h2>
         <div class="tools">
           <div class="seg" role="group" aria-label="Agrupar por">
@@ -197,14 +243,15 @@ details.cls summary{cursor:pointer;font-weight:600}
         <div class="scroll" id="tableWrap"></div>
       </section>
 
-      <section>
+      <section class="s-msg">
         <h2>Mensagem para o WhatsApp</h2>
         <p class="sub">A mensagem é montada com a meta e o realizado atual. Você pode ajustar o texto antes de enviar.</p>
         <div class="wa-row">
           <div>
             <textarea id="msg" class="msg" aria-label="Mensagem"></textarea>
             <div class="actions">
-              <a class="wa" id="waBtn" href="#" target="_blank" rel="noopener" aria-disabled="true">Enviar pelo WhatsApp</a>
+              <a class="wa web" id="waWebBtn" href="#" target="_blank" rel="noopener" aria-disabled="true">WhatsApp Web (computador)</a>
+              <a class="wa" id="waBtn" href="#" target="_blank" rel="noopener" aria-disabled="true">WhatsApp (celular)</a>
               <button class="btn" type="button" id="copyBtn">Copiar mensagem</button>
               <button class="btn" type="button" id="resetMsg">Refazer texto</button>
             </div>
@@ -212,12 +259,12 @@ details.cls summary{cursor:pointer;font-weight:600}
           </div>
           <div>
             <label class="f"><span>WhatsApp do destinatário (opcional)</span><input type="tel" id="phone" inputmode="tel" placeholder="(44) 99999-9999"></label>
-            <p class="hint">Sem número, o WhatsApp abre para você escolher o contato. Números sem DDI recebem +55.</p>
+            <p class="hint">Sem número, o WhatsApp abre para você escolher o contato. Números sem DDI recebem +55. No computador, prefira o WhatsApp Web; se a formatação falhar, use Copiar mensagem e cole na conversa.</p>
           </div>
         </div>
       </section>
 
-      <section>
+      <section class="s-cls">
         <details class="cls">
           <summary>Como cada grupo de produtos é classificado</summary>
           <p class="sub" style="margin-top:8px">Grupos com “IQF” no nome entram em IQF. Batatas, massas, pão de queijo, processados, sanduíche, tilápias, polenta e mandioca entram em ALP. O restante fica fora das duas categorias, mas conta no Geral. Altere abaixo se precisar.</p>
@@ -427,6 +474,11 @@ if (typeof module!=='undefined') module.exports = {norm,keyOf,classifyDefault,cl
     var n = selected(currentAgg()).length;
     $('resSub').textContent = has ? n+(n===1?' cliente somado':' clientes somados')+'. A linha escura marca 100% da meta.' : 'Adicione as planilhas para calcular o realizado.';
   }
+  function cells(a){
+    return '<td class="num" data-label="Faturamento total">'+money(a.fat)+'</td><td class="num" data-label="Volume total">'+vol(a.vol)+'</td>'+
+      '<td class="num" data-label="Faturamento IQF">'+money(a.iqfFat)+'</td><td class="num" data-label="Volume IQF">'+vol(a.iqfVol)+'</td>'+
+      '<td class="num" data-label="Faturamento ALP">'+money(a.alpFat)+'</td><td class="num" data-label="Volume ALP">'+vol(a.alpVol)+'</td>';
+  }
   function renderTable(list){
     var w = $('tableWrap');
     if (!list.length){ w.innerHTML = '<div class="empty">Nenhuma planilha carregada ainda.</div>'; return; }
@@ -434,16 +486,13 @@ if (typeof module!=='undefined') module.exports = {norm,keyOf,classifyDefault,cl
     var rows = list.map(function(a){
       var off = state.excluded[a.key];
       var src = state.mode==='client' ? '<small>'+esc(a.fileList.map(prettyFile).join(', '))+'</small>' : '';
-      return '<tr class="'+(off?'off':'')+'"><td><input type="checkbox" data-k="'+esc(a.key)+'" '+(off?'':'checked')+' aria-label="Incluir '+esc(a.name)+'"></td>'+
-        '<td>'+esc(a.name)+src+'</td>'+
-        '<td class="num">'+money(a.fat)+'</td><td class="num">'+vol(a.vol)+'</td>'+
-        '<td class="num">'+money(a.iqfFat)+'</td><td class="num">'+vol(a.iqfVol)+'</td>'+
-        '<td class="num">'+money(a.alpFat)+'</td><td class="num">'+vol(a.alpVol)+'</td></tr>';
+      return '<tr class="'+(off?'off':'')+'"><td class="ck"><input type="checkbox" data-k="'+esc(a.key)+'" '+(off?'':'checked')+' aria-label="Incluir '+esc(a.name)+'"></td>'+
+        '<td class="nm">'+esc(a.name)+src+'</td>'+cells(a)+'</tr>';
     }).join('');
     w.innerHTML = '<table><thead><tr class="grp"><th></th><th></th><th colspan="2">Total</th><th colspan="2">IQF</th><th colspan="2">ALP</th></tr>'+
       '<tr><th></th><th style="text-align:left">'+(state.mode==='client'?'Cliente':'Arquivo')+'</th><th>Faturamento</th><th>Volume</th><th>Faturamento</th><th>Volume</th><th>Faturamento</th><th>Volume</th></tr></thead>'+
       '<tbody>'+rows+'</tbody>'+
-      '<tfoot><tr><td></td><td style="text-align:left">Soma dos marcados</td><td class="num">'+money(t.fat)+'</td><td class="num">'+vol(t.vol)+'</td><td class="num">'+money(t.iqfFat)+'</td><td class="num">'+vol(t.iqfVol)+'</td><td class="num">'+money(t.alpFat)+'</td><td class="num">'+vol(t.alpVol)+'</td></tr></tfoot></table>';
+      '<tfoot><tr><td class="ck"></td><td class="nm" style="text-align:left">Soma dos marcados</td>'+cells(t)+'</tr></tfoot></table>';
   }
   function renderClasses(){
     var seen = {}, rows = [];
@@ -462,33 +511,44 @@ if (typeof module!=='undefined') module.exports = {norm,keyOf,classifyDefault,cl
   /* ---------- mensagem ---------- */
   function buildMessage(t){
     var M = meta(), R = real(t), per = $('periodo').value.trim();
+    var SEP = '-----------------------------';
     var L = [];
-    L.push('*Acompanhamento '+($('box').value.trim()||'Box')+'*');
-    L.push('Meta x Realizado'+(per?' – '+per:''));
+    L.push('*ACOMPANHAMENTO '+($('box').value.trim()||'BOX').toUpperCase()+'*');
+    L.push('Meta x Realizado'+(per?' - '+per:''));
+    L.push(SEP);
+    L.push('*RESUMO (% DA META)*');
     SECS.forEach(function(s){
-      L.push(''); L.push('*'+s.n+'*');
+      L.push(s.n+': Faturamento '+pctTxt(pct(R[s.k].fat,M[s.k].fat))+' | Volume '+pctTxt(pct(R[s.k].vol,M[s.k].vol)));
+    });
+    SECS.forEach(function(s){
+      L.push(SEP);
+      L.push('*'+s.n.toUpperCase()+'*');
       [['Faturamento','fat',money],['Volume','vol',vol]].forEach(function(x){
         var r = R[s.k][x[1]], m = M[s.k][x[1]], p = pct(r,m);
-        L.push(x[0]);
-        L.push('• Meta: '+x[2](m));
-        L.push('• Realizado: '+x[2](r)+(p==null?'':' ('+pctTxt(p)+') '+(p>=100?'✅':'⚠️')));
-        if (m>0 && r<m) L.push('• Falta: '+x[2](m-r));
+        L.push('');
+        L.push('*'+x[0]+'*');
+        L.push('Meta: '+x[2](m));
+        L.push('Realizado: '+x[2](r));
+        if (p==null){ L.push('Atingido: sem meta informada'); }
+        else if (p>=100){ L.push('Atingido: '+pctTxt(p)+' - META BATIDA'); L.push('Excedente: '+x[2](r-m)); }
+        else { L.push('Atingido: '+pctTxt(p)+' - ABAIXO DA META'); L.push('Falta: '+x[2](m-r)); }
       });
     });
     var c = $('contra').value.trim();
-    if (c){ L.push(''); L.push('*Contrapartidas*'); L.push(c); }
+    if (c){ L.push(SEP); L.push('*CONTRAPARTIDAS*'); L.push(c); }
     return L.join('\n');
   }
-  function waLink(){
-    var d = $('phone').value.replace(/\D/g,'');
-    if (d && d.length<=11) d = '55'+d;
-    return 'https://wa.me/'+d+'?text='+encodeURIComponent($('msg').value);
+  function phoneDigits(){ var d = $('phone').value.replace(/\D/g,''); if (d && d.length<=11) d = '55'+d; return d; }
+  function waLink(){ return 'https://wa.me/'+phoneDigits()+'?text='+encodeURIComponent($('msg').value); }
+  function waWebLink(){
+    var d = phoneDigits();
+    return 'https://web.whatsapp.com/send?'+(d?'phone='+d+'&':'')+'text='+encodeURIComponent($('msg').value);
   }
   function syncWa(){
     var has = Object.keys(state.files).length>0 && $('msg').value.trim();
-    var a = $('waBtn');
-    a.href = has ? waLink() : '#';
-    a.setAttribute('aria-disabled', has?'false':'true');
+    [['waBtn',waLink],['waWebBtn',waWebLink]].forEach(function(x){
+      var a = $(x[0]); a.href = has ? x[1]() : '#'; a.setAttribute('aria-disabled', has?'false':'true');
+    });
   }
 
   function refresh(){
@@ -560,9 +620,11 @@ if (typeof module!=='undefined') module.exports = {norm,keyOf,classifyDefault,cl
     }catch(e){ fallback(); }
     function fallback(){ try{ $('msg').select(); done(document.execCommand('copy')); }catch(e){ done(false); } }
   });
-  $('waBtn').addEventListener('click', function(e){
-    if (this.getAttribute('aria-disabled')==='true'){ e.preventDefault(); return; }
-    this.href = waLink();
+  [['waBtn',waLink],['waWebBtn',waWebLink]].forEach(function(x){
+    $(x[0]).addEventListener('click', function(e){
+      if (this.getAttribute('aria-disabled')==='true'){ e.preventDefault(); return; }
+      this.href = x[1]();
+    });
   });
 
   $('themeBtn').addEventListener('click', function(){
