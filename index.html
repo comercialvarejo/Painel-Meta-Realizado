@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meta x Realizado – Acompanhamento de vendas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#E8EEF2; --surface:#F6F9FB; --ink:#10263A; --muted:#566C7E; --line:#C5D3DD;
+  --accent:#0B6E8A; --on-accent:#fff; --geral:#10263A; --iqf:#1769AA; --alp:#B85A14;
+  --good:#1C7C4F; --bad:#B8402F; --wa:#138A44; --field:#fff;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1A26; --surface:#12283A; --ink:#E6EEF4; --muted:#94A9BA; --line:#27425A;
+    --accent:#5CC4E0; --on-accent:#0C1A26; --geral:#E6EEF4; --iqf:#5AA9EA; --alp:#F0974F;
+    --good:#4FC58A; --bad:#F0806F; --wa:#1E9E50; --field:#0C1A26;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1A26; --surface:#12283A; --ink:#E6EEF4; --muted:#94A9BA; --line:#27425A;
+  --accent:#5CC4E0; --on-accent:#0C1A26; --geral:#E6EEF4; --iqf:#5AA9EA; --alp:#F0974F;
+  --good:#4FC58A; --bad:#F0806F; --wa:#1E9E50; --field:#0C1A26;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.5 "Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:"Bricolage Grotesque","Public Sans",system-ui,sans-serif;margin:0;letter-spacing:-.01em;line-height:1.15}
+.num{font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:1240px;margin:0 auto;padding:28px 20px 56px}
+.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;padding-bottom:20px;border-bottom:2px solid var(--ink)}
+.top h1{font-size:clamp(26px,4vw,40px);font-weight:700}
+.top p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.theme{background:none;border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer;color:var(--muted)}
+.theme:hover{border-color:var(--ink);color:var(--ink)}
+
+.layout{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:0 40px;margin-top:28px;align-items:start}
+@media (max-width:980px){.layout{grid-template-columns:1fr}}
+.side section,.main section{padding:0 0 28px}
+.side section+section,.main section+section{border-top:1px solid var(--line);padding-top:24px}
+h2{font-size:20px;font-weight:700;margin-bottom:4px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+
+.drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:22px 16px;text-align:center;cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--accent)}
+.drop strong{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:17px}
+.drop span{color:var(--muted);font-size:13px}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.drop:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.files{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.files li{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:13.5px;padding:6px 10px;border-left:3px solid var(--accent);background:var(--surface)}
+.files li small{color:var(--muted)}
+.files button{background:none;border:0;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px}
+.files button:hover{color:var(--bad)}
+.status{min-height:20px;margin:10px 0 0;font-size:13px;color:var(--muted)}
+.status.err{color:var(--bad)}
+
+label.f{display:block;font-size:13px;color:var(--muted);margin-bottom:10px}
+label.f span{display:block;margin-bottom:3px}
+input[type=text],input[type=tel],textarea,select{width:100%;background:var(--field);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+textarea{resize:vertical;line-height:1.45}
+.metagrid{display:grid;grid-template-columns:44px 1fr 1fr;gap:8px;align-items:center;margin:4px 0 14px}
+.metagrid .hd{font-size:12.5px;color:var(--muted)}
+.metagrid .rl{font-family:"Bricolage Grotesque",sans-serif;font-weight:700}
+.btn{border:1px solid var(--ink);background:transparent;border-radius:6px;padding:8px 14px;cursor:pointer;font-weight:600}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08);background:var(--accent);color:var(--on-accent)}
+details.paste{margin-bottom:14px;border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface)}
+details.paste summary{cursor:pointer;font-weight:600;font-size:13.5px}
+details.paste textarea{margin:8px 0}
+
+/* resultado */
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.col{padding:0 22px;border-left:1px solid var(--line)}
+.col:first-child{padding-left:0;border-left:0}
+@media (max-width:760px){.col{padding:16px 0;border-left:0;border-top:1px solid var(--line)}.col:first-child{border-top:0}}
+.col h3{font-size:22px;margin-bottom:14px;color:var(--c)}
+.gauge{margin-bottom:18px}
+.g-head{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;color:var(--muted)}
+.g-pct{font-family:"Bricolage Grotesque",sans-serif;font-size:26px;font-weight:700;color:var(--ink)}
+.g-pct.ok{color:var(--good)}
+.track{position:relative;height:16px;background:var(--line);border-radius:3px;margin:4px 0 8px;overflow:visible}
+.fill{position:absolute;left:0;top:0;bottom:0;background:var(--c);border-radius:3px;transition:width .5s ease}
+.tick{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--ink)}
+.g-nums{display:grid;gap:1px;font-size:13px;color:var(--muted)}
+.g-nums b{color:var(--ink);font-weight:600}
+.gap{color:var(--bad)} .gap.ok{color:var(--good)}
+
+/* tabela */
+.tools{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{background:none;border:0;padding:6px 12px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.linkbtn{background:none;border:0;color:var(--accent);cursor:pointer;text-decoration:underline;padding:0}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;max-width:100%}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:13px}
+th,td{padding:8px 7px;text-align:right;white-space:nowrap}
+th:nth-child(2),td:nth-child(2){text-align:left;white-space:normal;min-width:180px}
+th:first-child,td:first-child{width:34px;text-align:center}
+thead th{font-weight:600;color:var(--muted);border-bottom:1px solid var(--line);background:var(--surface);font-size:12.5px}
+thead tr.grp th{text-align:center;border-bottom:0;color:var(--ink)}
+tbody tr+tr td{border-top:1px solid var(--line)}
+tbody tr.off{opacity:.45}
+td small{display:block;color:var(--muted);font-size:12px}
+tfoot td{border-top:2px solid var(--ink);font-weight:700;background:var(--surface)}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+
+/* mensagem */
+.wa-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,260px);gap:12px 20px;align-items:start}
+@media (max-width:760px){.wa-row{grid-template-columns:1fr}}
+.msg{min-height:340px;font-family:"Public Sans",system-ui,sans-serif;font-size:14px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+a.wa{display:inline-block;text-decoration:none;background:var(--wa);color:#fff;border-radius:6px;padding:9px 16px;font-weight:600}
+a.wa:hover{filter:brightness(1.08)}
+a.wa[aria-disabled=true]{opacity:.45;pointer-events:none}
+.hint{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+
+details.cls summary{cursor:pointer;font-weight:600}
+.cls table{min-width:0;margin-top:10px}
+.cls td:first-child,.cls th:first-child{text-align:left;width:auto}
+.cls td:nth-child(2),.cls th:nth-child(2){text-align:right;min-width:0}
+.cls select{width:auto;padding:4px 8px}
+@media (prefers-reduced-motion:reduce){.fill{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Meta x Realizado</h1>
+      <p>Alimente com as planilhas de vendas, confira o realizado de cada cliente contra a meta do supervisor e envie o resumo pelo WhatsApp.</p>
+    </div>
+    <button class="theme" id="themeBtn" type="button">Alternar tema</button>
+  </header>
+
+  <div class="layout">
+    <aside class="side">
+      <section>
+        <h2>Planilhas de vendas</h2>
+        <p class="sub">Arquivos .xlsx exportados do sistema (um ou vários clientes por arquivo).</p>
+        <label class="drop" id="drop">
+          <input type="file" id="fileIn" accept=".xlsx,.xls" multiple>
+          <strong>Escolher planilhas</strong>
+          <span>ou arraste os arquivos até aqui</span>
+        </label>
+        <ul class="files" id="fileList"></ul>
+        <p class="status" id="status" role="status"></p>
+      </section>
+
+      <section>
+        <h2>Meta do supervisor</h2>
+        <p class="sub">Preencha à mão ou cole a mensagem que o supervisor enviou.</p>
+        <details class="paste">
+          <summary>Colar mensagem da meta</summary>
+          <textarea id="pasteBox" rows="9" placeholder="Meta/Acompanhamento Setembro&#10;Geral&#10;Faturamento: R$ 0,00&#10;Volume: 0&#10;IQF …"></textarea>
+          <button class="btn" type="button" id="pasteBtn">Ler mensagem</button>
+        </details>
+        <label class="f"><span>Nome do box</span><input type="text" id="box" value="Box Verona"></label>
+        <label class="f"><span>Período</span><input type="text" id="periodo" value="Setembro"></label>
+        <div class="metagrid">
+          <span></span><span class="hd">Faturamento (R$)</span><span class="hd">Volume</span>
+          <span class="rl">Geral</span><input type="text" inputmode="decimal" id="m_g_fat" aria-label="Meta Geral faturamento"><input type="text" inputmode="decimal" id="m_g_vol" aria-label="Meta Geral volume">
+          <span class="rl">IQF</span><input type="text" inputmode="decimal" id="m_iqf_fat" aria-label="Meta IQF faturamento"><input type="text" inputmode="decimal" id="m_iqf_vol" aria-label="Meta IQF volume">
+          <span class="rl">ALP</span><input type="text" inputmode="decimal" id="m_alp_fat" aria-label="Meta ALP faturamento"><input type="text" inputmode="decimal" id="m_alp_vol" aria-label="Meta ALP volume">
+        </div>
+        <label class="f"><span>Contrapartidas</span><textarea id="contra" rows="2"></textarea></label>
+      </section>
+    </aside>
+
+    <main class="main">
+      <section>
+        <h2 id="resTitle">Realizado contra a meta</h2>
+        <p class="sub" id="resSub">Adicione as planilhas para calcular o realizado.</p>
+        <div class="cols" id="cols"></div>
+      </section>
+
+      <section>
+        <h2>Clientes</h2>
+        <div class="tools">
+          <div class="seg" role="group" aria-label="Agrupar por">
+            <button type="button" id="modeClient" aria-pressed="true">Por cliente</button>
+            <button type="button" id="modeFile" aria-pressed="false">Por arquivo</button>
+          </div>
+          <span>Marque os clientes que entram na soma. <button class="linkbtn" type="button" id="selAll">Todos</button> · <button class="linkbtn" type="button" id="selNone">Nenhum</button></span>
+        </div>
+        <div class="scroll" id="tableWrap"></div>
+      </section>
+
+      <section>
+        <h2>Mensagem para o WhatsApp</h2>
+        <p class="sub">A mensagem é montada com a meta e o realizado atual. Você pode ajustar o texto antes de enviar.</p>
+        <div class="wa-row">
+          <div>
+            <textarea id="msg" class="msg" aria-label="Mensagem"></textarea>
+            <div class="actions">
+              <a class="wa" id="waBtn" href="#" target="_blank" rel="noopener" aria-disabled="true">Enviar pelo WhatsApp</a>
+              <button class="btn" type="button" id="copyBtn">Copiar mensagem</button>
+              <button class="btn" type="button" id="resetMsg">Refazer texto</button>
+            </div>
+            <p class="status" id="waStatus" role="status"></p>
+          </div>
+          <div>
+            <label class="f"><span>WhatsApp do destinatário (opcional)</span><input type="tel" id="phone" inputmode="tel" placeholder="(44) 99999-9999"></label>
+            <p class="hint">Sem número, o WhatsApp abre para você escolher o contato. Números sem DDI recebem +55.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <details class="cls">
+          <summary>Como cada grupo de produtos é classificado</summary>
+          <p class="sub" style="margin-top:8px">Grupos com “IQF” no nome entram em IQF. Batatas, massas, pão de queijo, processados, sanduíche, tilápias, polenta e mandioca entram em ALP. O restante fica fora das duas categorias, mas conta no Geral. Altere abaixo se precisar.</p>
+          <div id="clsWrap"></div>
+        </details>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+/* ===== núcleo: leitura e agregação (sem DOM) ===== */
+function norm(s){ return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim(); }
+function keyOf(s){ return norm(s).replace(/[^A-Z0-9]/g,''); }
+var ALP_KEYS = ['BATATA','MASSA','PAO DE QUEIJO','PROCESSADO','SANDUICHE','TILAPIA','POLENTA','MANDIOCA'];
+function classifyDefault(group){
+  var g = norm(group);
+  if (/IQF/.test(g)) return 'IQF';
+  for (var i=0;i<ALP_KEYS.length;i++){ if (g.indexOf(ALP_KEYS[i])>=0) return 'ALP'; }
+  return 'OUT';
+}
+function classify(group, overrides){
+  var k = norm(group);
+  if (overrides && overrides[k]) return overrides[k];
+  return classifyDefault(group);
+}
+function num(v){ if (v==null || v==='') return 0; var n = typeof v==='number'? v : parseFloat(String(v).replace(',','.')); return isFinite(n)?n:0; }
+function prettyFile(name){ return name.replace(/\.[^.]+$/,'').replace(/_?Boiadeiro/i,'').replace(/_/g,' ').trim(); }
+
+/* rows: matriz (header:1) da primeira aba. Células mescladas só trazem valor na 1ª linha => carrega para baixo. */
+function parseRows(rows, fileName){
+  var hi = -1, i;
+  for (i=0;i<rows.length;i++){ if (rows[i] && norm(rows[i][0]).indexOf('GRUPO')===0){ hi=i; break; } }
+  if (hi<0) throw new Error('Não encontrei o cabeçalho "Grupo de Produtos" em '+fileName);
+  var recs = [], group = null, period = {mes:null, ano:null}, filt = '';
+  for (i=hi+1;i<rows.length;i++){
+    var r = rows[i] || [];
+    var a = r[0], c = r[2];
+    if (typeof a==='string' && norm(a).indexOf('FILTROS APLICADOS')===0){ filt = a; break; }
+    if (a!=null && a!==''){ if (norm(a)==='TOTAL') continue; group = String(a).trim(); }
+    if (!group) continue;
+    if (c==null || c==='' || norm(c)==='TOTAL') continue;   // só linhas de cliente
+    recs.push({ file:fileName, client:String(c).trim(), clientKey:keyOf(c), group:group, vol:num(r[4]), fat:num(r[5]) });
+  }
+  for (i=hi+1;i<rows.length;i++){ if (rows[i] && typeof rows[i][0]==='string' && norm(rows[i][0]).indexOf('FILTROS')===0){ filt=rows[i][0]; } }
+  var m = /M[eê]s\s+[eé]\s+([^\s]+)/i.exec(filt); if (m) period.mes = m[1];
+  var y = /Ano\s+[eé]\s+(\d{4})/i.exec(filt); if (y) period.ano = y[1];
+  return { recs:recs, period:period };
+}
+
+function emptyAgg(name){ return {name:name, files:{}, vol:0, fat:0, iqfVol:0, iqfFat:0, alpVol:0, alpFat:0, outVol:0, outFat:0}; }
+function aggregate(recs, overrides, mode){
+  var map = {}, order = [];
+  recs.forEach(function(r){
+    var key = mode==='file' ? keyOf(r.file) : r.clientKey;
+    var label = mode==='file' ? prettyFile(r.file) : r.client;
+    if (!map[key]){ map[key] = emptyAgg(label); order.push(key); }
+    var a = map[key]; a.files[r.file]=1;
+    var cat = classify(r.group, overrides);
+    a.vol += r.vol; a.fat += r.fat;
+    if (cat==='IQF'){ a.iqfVol+=r.vol; a.iqfFat+=r.fat; }
+    else if (cat==='ALP'){ a.alpVol+=r.vol; a.alpFat+=r.fat; }
+    else { a.outVol+=r.vol; a.outFat+=r.fat; }
+  });
+  return order.map(function(k){ var a = map[k]; a.key = k; a.fileList = Object.keys(a.files); return a; });
+}
+function sumAgg(list){
+  var t = emptyAgg('Total');
+  list.forEach(function(a){ ['vol','fat','iqfVol','iqfFat','alpVol','alpFat','outVol','outFat'].forEach(function(f){ t[f]+=a[f]; }); });
+  return t;
+}
+function parseBR(s){
+  if (s==null) return 0; s = String(s).replace(/[^\d,.\-]/g,'');
+  if (!s) return 0;
+  if (s.indexOf(',')>=0) s = s.replace(/\./g,'').replace(',','.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g,'');
+  var n = parseFloat(s); return isFinite(n)?n:0;
+}
+/* lê a mensagem do supervisor */
+function parseMeta(text){
+  var out = {box:null, periodo:null, g:{fat:null,vol:null}, iqf:{fat:null,vol:null}, alp:{fat:null,vol:null}, contra:null};
+  var lines = String(text).split(/\r?\n/), sec = null, i, l, m;
+  for (i=0;i<lines.length;i++){
+    l = lines[i].trim(); if (!l) continue;
+    if ((m = /acompanhamento\s+(.+)$/i.exec(l)) && !/^meta/i.test(l)) { out.box = m[1].trim(); continue; }
+    if ((m = /meta\s*\/\s*acompanhamento\s+(.+)$/i.exec(l))) { out.periodo = m[1].trim(); continue; }
+    if (/^contrapartidas?/i.test(l)){ out.contra = lines.slice(i+1).join('\n').trim(); break; }
+    if (/^\*?\s*geral\b/i.test(l)){ sec='g'; continue; }
+    if (/^\*?\s*iqf\b/i.test(l)){ sec='iqf'; continue; }
+    if (/^\*?\s*alp\b/i.test(l)){ sec='alp'; continue; }
+    if (sec && (m = /faturamento\s*:?\s*R?\$?\s*([\d.,]+)/i.exec(l))) { out[sec].fat = parseBR(m[1]); continue; }
+    if (sec && (m = /volume\s*:?\s*([\d.,]+)/i.exec(l))) { out[sec].vol = parseBR(m[1]); continue; }
+  }
+  return out;
+}
+if (typeof module!=='undefined') module.exports = {norm,keyOf,classifyDefault,classify,parseRows,aggregate,sumAgg,parseBR,parseMeta,prettyFile};
+
+</script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var state = { files:{}, mode:'client', excluded:{}, overrides:{}, msgManual:false, periodManual:false, detected:null };
+  var META_IDS = ['m_g_fat','m_g_vol','m_iqf_fat','m_iqf_vol','m_alp_fat','m_alp_vol'];
+  var STORE = 'acompanhamento_meta_v1';
+
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function money(n){ return 'R$ '+(Math.round(n*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function vol(n){ return (Math.round(n*100)/100).toLocaleString('pt-BR',{maximumFractionDigits:2}); }
+  function pctTxt(p){ return p==null ? '—' : p.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%'; }
+  function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+
+  /* ---------- persistência (só metas e preferências) ---------- */
+  function save(){
+    try{
+      var o = { box:$('box').value, contra:$('contra').value, mode:state.mode, overrides:state.overrides, phone:$('phone').value };
+      META_IDS.forEach(function(id){ o[id] = $(id).value; });
+      localStorage.setItem(STORE, JSON.stringify(o));
+    }catch(e){}
+  }
+  function load(){
+    var o = null;
+    try{ o = JSON.parse(localStorage.getItem(STORE)||'null'); }catch(e){}
+    var d = { box:'Box Verona', contra:'Conforme plano JBP', m_g_fat:'207.236,43', m_g_vol:'13.128', m_iqf_fat:'62.123,81', m_iqf_vol:'5.363', m_alp_fat:'30.916,25', m_alp_vol:'2.610', mode:'client', overrides:{}, phone:'' };
+    o = Object.assign(d, o||{});
+    $('box').value = o.box; $('contra').value = o.contra; $('phone').value = o.phone||'';
+    META_IDS.forEach(function(id){ $(id).value = o[id]; });
+    state.mode = o.mode==='file'?'file':'client'; state.overrides = o.overrides||{};
+  }
+
+  /* ---------- leitura dos arquivos ---------- */
+  function setStatus(t, err){ var s=$('status'); s.textContent=t||''; s.className='status'+(err?' err':''); }
+  function readFile(f){
+    return new Promise(function(res){
+      var r = new FileReader();
+      r.onerror = function(){ res({name:f.name, error:'Não foi possível ler o arquivo.'}); };
+      r.onload = function(){
+        try{
+          var wb = XLSX.read(new Uint8Array(r.result), {type:'array'});
+          var ws = wb.Sheets[wb.SheetNames[0]];
+          var rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+          var p = parseRows(rows, f.name);
+          res({name:f.name, recs:p.recs, period:p.period});
+        }catch(e){ res({name:f.name, error:e.message}); }
+      };
+      r.readAsArrayBuffer(f);
+    });
+  }
+  function addFiles(list){
+    if (typeof XLSX==='undefined'){ setStatus('A biblioteca de leitura de planilhas não carregou. Verifique a conexão e recarregue a página.', true); return; }
+    var arr = Array.prototype.slice.call(list);
+    if (!arr.length) return;
+    Promise.all(arr.map(readFile)).then(function(results){
+      var errs = [], ok = 0;
+      results.forEach(function(x){
+        if (x.error){ errs.push(x.name+': '+x.error); return; }
+        if (!x.recs.length){ errs.push(x.name+': nenhuma linha de cliente encontrada.'); return; }
+        state.files[x.name] = x; ok++;
+      });
+      setStatus(errs.length ? errs.join(' ') : (ok+(ok===1?' planilha carregada.':' planilhas carregadas.')), !!errs.length);
+      refresh();
+    });
+  }
+  function allRecs(){ var r=[]; Object.keys(state.files).forEach(function(k){ r = r.concat(state.files[k].recs); }); return r; }
+  function detectPeriod(){
+    var keys = Object.keys(state.files), p=null;
+    for (var i=0;i<keys.length;i++){ var pp = state.files[keys[i]].period; if (pp && pp.mes){ p = cap(pp.mes)+(pp.ano?'/'+pp.ano:''); break; } }
+    return p;
+  }
+
+  /* ---------- cálculo ---------- */
+  function currentAgg(){ return aggregate(allRecs(), state.overrides, state.mode); }
+  function selected(list){ return list.filter(function(a){ return !state.excluded[a.key]; }); }
+  function meta(){ return {
+    g:{fat:parseBR($('m_g_fat').value), vol:parseBR($('m_g_vol').value)},
+    iqf:{fat:parseBR($('m_iqf_fat').value), vol:parseBR($('m_iqf_vol').value)},
+    alp:{fat:parseBR($('m_alp_fat').value), vol:parseBR($('m_alp_vol').value)} }; }
+  function real(t){ return { g:{fat:t.fat, vol:t.vol}, iqf:{fat:t.iqfFat, vol:t.iqfVol}, alp:{fat:t.alpFat, vol:t.alpVol} }; }
+  function pct(r,m){ return m>0 ? r/m*100 : null; }
+
+  /* ---------- render ---------- */
+  function renderFiles(){
+    var ul = $('fileList'), keys = Object.keys(state.files);
+    ul.innerHTML = keys.map(function(k){
+      var f = state.files[k];
+      return '<li><span>'+esc(prettyFile(k))+' <small>'+f.recs.length+' linhas</small></span><button type="button" data-rm="'+esc(k)+'" aria-label="Remover '+esc(k)+'">×</button></li>';
+    }).join('');
+  }
+  var SECS = [ {k:'g', n:'Geral', c:'var(--geral)'}, {k:'iqf', n:'IQF', c:'var(--iqf)'}, {k:'alp', n:'ALP', c:'var(--alp)'} ];
+  function gauge(label, r, m, isMoney, color){
+    var p = pct(r,m), f = isMoney?money:vol;
+    var ratio = p==null?0:p/100, scale = Math.max(1.2, ratio*1.04);
+    var w = Math.min(100, ratio/scale*100), tick = 1/scale*100;
+    var ok = p!=null && p>=100;
+    var gapTxt = m>0 ? (ok ? 'Superou em '+f(r-m) : 'Falta '+f(m-r)) : 'Sem meta informada';
+    return '<div class="gauge" style="--c:'+color+'">'+
+      '<div class="g-head"><span>'+label+'</span><span class="g-pct num'+(ok?' ok':'')+'">'+pctTxt(p)+'</span></div>'+
+      '<div class="track" role="img" aria-label="'+label+': '+pctTxt(p)+' da meta"><div class="fill" style="width:'+w+'%"></div><div class="tick" style="left:'+tick+'%" title="Meta"></div></div>'+
+      '<div class="g-nums num"><span>Realizado <b>'+f(r)+'</b></span><span>Meta <b>'+f(m)+'</b></span><span class="gap'+(ok?' ok':'')+'">'+gapTxt+'</span></div></div>';
+  }
+  function renderResult(t){
+    var M = meta(), R = real(t), has = Object.keys(state.files).length>0;
+    $('cols').innerHTML = SECS.map(function(s){
+      return '<div class="col" style="--c:'+s.c+'"><h3>'+s.n+'</h3>'+gauge('Faturamento',R[s.k].fat,M[s.k].fat,true,s.c)+gauge('Volume',R[s.k].vol,M[s.k].vol,false,s.c)+'</div>';
+    }).join('');
+    var per = $('periodo').value.trim();
+    $('resTitle').textContent = ($('box').value.trim()||'Box')+(per?' – '+per:'');
+    var n = selected(currentAgg()).length;
+    $('resSub').textContent = has ? n+(n===1?' cliente somado':' clientes somados')+'. A linha escura marca 100% da meta.' : 'Adicione as planilhas para calcular o realizado.';
+  }
+  function renderTable(list){
+    var w = $('tableWrap');
+    if (!list.length){ w.innerHTML = '<div class="empty">Nenhuma planilha carregada ainda.</div>'; return; }
+    var t = sumAgg(selected(list));
+    var rows = list.map(function(a){
+      var off = state.excluded[a.key];
+      var src = state.mode==='client' ? '<small>'+esc(a.fileList.map(prettyFile).join(', '))+'</small>' : '';
+      return '<tr class="'+(off?'off':'')+'"><td><input type="checkbox" data-k="'+esc(a.key)+'" '+(off?'':'checked')+' aria-label="Incluir '+esc(a.name)+'"></td>'+
+        '<td>'+esc(a.name)+src+'</td>'+
+        '<td class="num">'+money(a.fat)+'</td><td class="num">'+vol(a.vol)+'</td>'+
+        '<td class="num">'+money(a.iqfFat)+'</td><td class="num">'+vol(a.iqfVol)+'</td>'+
+        '<td class="num">'+money(a.alpFat)+'</td><td class="num">'+vol(a.alpVol)+'</td></tr>';
+    }).join('');
+    w.innerHTML = '<table><thead><tr class="grp"><th></th><th></th><th colspan="2">Total</th><th colspan="2">IQF</th><th colspan="2">ALP</th></tr>'+
+      '<tr><th></th><th style="text-align:left">'+(state.mode==='client'?'Cliente':'Arquivo')+'</th><th>Faturamento</th><th>Volume</th><th>Faturamento</th><th>Volume</th><th>Faturamento</th><th>Volume</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody>'+
+      '<tfoot><tr><td></td><td style="text-align:left">Soma dos marcados</td><td class="num">'+money(t.fat)+'</td><td class="num">'+vol(t.vol)+'</td><td class="num">'+money(t.iqfFat)+'</td><td class="num">'+vol(t.iqfVol)+'</td><td class="num">'+money(t.alpFat)+'</td><td class="num">'+vol(t.alpVol)+'</td></tr></tfoot></table>';
+  }
+  function renderClasses(){
+    var seen = {}, rows = [];
+    allRecs().forEach(function(r){ var k = norm(r.group); if(!seen[k]){ seen[k]={name:r.group,vol:0}; rows.push(k);} seen[k].vol += r.vol; });
+    var w = $('clsWrap');
+    if (!rows.length){ w.innerHTML = '<p class="sub">Os grupos aparecem aqui depois que você carregar as planilhas.</p>'; return; }
+    rows.sort(function(a,b){ return seen[a].name.localeCompare(seen[b].name,'pt-BR'); });
+    w.innerHTML = '<table><thead><tr><th>Grupo de produtos</th><th>Volume</th><th>Entra em</th></tr></thead><tbody>'+
+      rows.map(function(k){
+        var cur = classify(seen[k].name, state.overrides);
+        function o(v,t){ return '<option value="'+v+'"'+(cur===v?' selected':'')+'>'+t+'</option>'; }
+        return '<tr><td style="text-align:left;white-space:normal">'+esc(seen[k].name)+'</td><td class="num">'+vol(seen[k].vol)+'</td><td><select data-g="'+esc(k)+'" aria-label="Classificação de '+esc(seen[k].name)+'">'+o('IQF','IQF')+o('ALP','ALP')+o('OUT','Fora de IQF e ALP')+'</select></td></tr>';
+      }).join('')+'</tbody></table>';
+  }
+
+  /* ---------- mensagem ---------- */
+  function buildMessage(t){
+    var M = meta(), R = real(t), per = $('periodo').value.trim();
+    var L = [];
+    L.push('*Acompanhamento '+($('box').value.trim()||'Box')+'*');
+    L.push('Meta x Realizado'+(per?' – '+per:''));
+    SECS.forEach(function(s){
+      L.push(''); L.push('*'+s.n+'*');
+      [['Faturamento','fat',money],['Volume','vol',vol]].forEach(function(x){
+        var r = R[s.k][x[1]], m = M[s.k][x[1]], p = pct(r,m);
+        L.push(x[0]);
+        L.push('• Meta: '+x[2](m));
+        L.push('• Realizado: '+x[2](r)+(p==null?'':' ('+pctTxt(p)+') '+(p>=100?'✅':'⚠️')));
+        if (m>0 && r<m) L.push('• Falta: '+x[2](m-r));
+      });
+    });
+    var c = $('contra').value.trim();
+    if (c){ L.push(''); L.push('*Contrapartidas*'); L.push(c); }
+    return L.join('\n');
+  }
+  function waLink(){
+    var d = $('phone').value.replace(/\D/g,'');
+    if (d && d.length<=11) d = '55'+d;
+    return 'https://wa.me/'+d+'?text='+encodeURIComponent($('msg').value);
+  }
+  function syncWa(){
+    var has = Object.keys(state.files).length>0 && $('msg').value.trim();
+    var a = $('waBtn');
+    a.href = has ? waLink() : '#';
+    a.setAttribute('aria-disabled', has?'false':'true');
+  }
+
+  function refresh(){
+    var list = currentAgg();
+    var det = detectPeriod(); state.detected = det;
+    if (det && !state.periodManual) $('periodo').value = det;
+    var t = sumAgg(selected(list));
+    renderFiles(); renderResult(t); renderTable(list); renderClasses();
+    if (!state.msgManual) $('msg').value = buildMessage(t);
+    syncWa(); save();
+  }
+
+  /* ---------- eventos ---------- */
+  var drop = $('drop');
+  $('fileIn').addEventListener('change', function(e){ addFiles(e.target.files); e.target.value=''; });
+  ['dragenter','dragover'].forEach(function(ev){ drop.addEventListener(ev,function(e){ e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev,function(e){ e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function(e){ if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files); });
+
+  $('fileList').addEventListener('click', function(e){
+    var k = e.target.getAttribute && e.target.getAttribute('data-rm');
+    if (k){ delete state.files[k]; setStatus(''); refresh(); }
+  });
+  $('tableWrap').addEventListener('change', function(e){
+    var k = e.target.getAttribute('data-k');
+    if (k){ if (e.target.checked) delete state.excluded[k]; else state.excluded[k]=true; state.msgManual=false; refresh(); }
+  });
+  $('selAll').addEventListener('click', function(){ state.excluded={}; state.msgManual=false; refresh(); });
+  $('selNone').addEventListener('click', function(){ currentAgg().forEach(function(a){ state.excluded[a.key]=true; }); state.msgManual=false; refresh(); });
+  function setMode(m){
+    state.mode = m; state.excluded = {}; state.msgManual=false;
+    $('modeClient').setAttribute('aria-pressed', m==='client'); $('modeFile').setAttribute('aria-pressed', m==='file');
+    refresh();
+  }
+  $('modeClient').addEventListener('click', function(){ setMode('client'); });
+  $('modeFile').addEventListener('click', function(){ setMode('file'); });
+
+  $('clsWrap').addEventListener('change', function(e){
+    var g = e.target.getAttribute('data-g');
+    if (g){ state.overrides[g] = e.target.value; state.msgManual=false; refresh(); }
+  });
+
+  var inputs = META_IDS.concat(['box','periodo','contra']);
+  inputs.forEach(function(id){ $(id).addEventListener('input', function(){ if (id==='periodo') state.periodManual = true; state.msgManual=false; refresh(); }); });
+  $('phone').addEventListener('input', function(){ syncWa(); save(); });
+  $('msg').addEventListener('input', function(){ state.msgManual = true; syncWa(); });
+  $('resetMsg').addEventListener('click', function(){ state.msgManual=false; refresh(); });
+
+  $('pasteBtn').addEventListener('click', function(){
+    var m = parseMeta($('pasteBox').value);
+    var found = 0;
+    [['g','m_g'],['iqf','m_iqf'],['alp','m_alp']].forEach(function(s){
+      if (m[s[0]].fat!=null){ $(s[1]+'_fat').value = m[s[0]].fat.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); found++; }
+      if (m[s[0]].vol!=null){ $(s[1]+'_vol').value = m[s[0]].vol.toLocaleString('pt-BR',{maximumFractionDigits:2}); found++; }
+    });
+    if (m.box) $('box').value = m.box;
+    if (m.periodo && !state.detected){ $('periodo').value = m.periodo; }
+    if (m.contra!=null) $('contra').value = m.contra;
+    setStatus(found ? 'Meta lida da mensagem ('+found+' valores).' : 'Não encontrei valores de meta no texto colado.', !found);
+    state.msgManual=false; refresh();
+  });
+
+  $('copyBtn').addEventListener('click', function(){
+    var txt = $('msg').value, st = $('waStatus');
+    function done(ok){ st.textContent = ok ? 'Mensagem copiada.' : 'Não foi possível copiar. Selecione o texto e copie manualmente.'; st.className='status'+(ok?'':' err'); }
+    try{
+      if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){ done(true); }, function(){ fallback(); }); }
+      else fallback();
+    }catch(e){ fallback(); }
+    function fallback(){ try{ $('msg').select(); done(document.execCommand('copy')); }catch(e){ done(false); } }
+  });
+  $('waBtn').addEventListener('click', function(e){
+    if (this.getAttribute('aria-disabled')==='true'){ e.preventDefault(); return; }
+    this.href = waLink();
+  });
+
+  $('themeBtn').addEventListener('click', function(){
+    var r = document.documentElement, cur = r.getAttribute('data-theme');
+    var dark = cur ? cur==='dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    r.setAttribute('data-theme', dark?'light':'dark');
+  });
+
+  load();
+  $('modeClient').setAttribute('aria-pressed', state.mode==='client'); $('modeFile').setAttribute('aria-pressed', state.mode==='file');
+  refresh();
+  window.__acomp = { addFiles:addFiles, state:state };
+})();
+</script>
+</body>
+</html>
